@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import { ethers } from 'ethers'
 import { create as ipfsHttpClient } from 'ipfs-http-client'
 import { useRouter } from 'next/router'
+import axios from 'axios'
 import Web3Modal from 'web3modal'
 
 const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
@@ -9,6 +10,7 @@ const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 import {
   nftmarketaddress,nftmarket_abi,nftMarketTokenAddress,nftMarketToken_Abi
 } from '../config'
+import { data } from 'autoprefixer'
 
 // import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
 // import Market from '../artifacts/contracts/NFTMarket.sol/NFTMarket.json'
@@ -16,6 +18,13 @@ import {
 export default function CreateItem() {
   const [fileUrl, setFileUrl] = useState(null)
   const [formInput, updateFormInput] = useState({ price: '', name: '', description: '' })
+  let [getInpiut, setGetInput] = useState({first:"", second :"", third: "" , image:""})
+  let [name, setName]= useState("");
+  let [description, setDescription] = useState("");
+  let [image, setImage] = useState("");
+  let [myData, setMydata]= useState(null);
+  let [myUrl, setMyUrl]=useState()
+
   const router = useRouter()
 
   async function onChange(e) {
@@ -52,6 +61,7 @@ export default function CreateItem() {
 
   async function listNFTForSale() {
     const url = await uploadToIPFS()
+    setMyUrl(url);
     const web3Modal = new Web3Modal()
     const connection = await web3Modal.connect()
     const provider = new ethers.providers.Web3Provider(connection)
@@ -427,11 +437,46 @@ export default function CreateItem() {
     let contract = new ethers.Contract(address, abi, signer)
     // let listingPrice = await contract.getListingPrice()
     // listingPrice = listingPrice.toString()
+    // console.log("Url is ", url.name);
     let transaction = await contract.createToken(url)
     await transaction.wait()
-   
-    router.push('/')
+  ;
+
+    // router.push('/')
+    fetchApi()
+    // let fetchingApi =await fetch(url).then((res)=>res.json()).then((data)=>{
+    //   setMydata(data)
+    // })
+    // console.log("fetchingApi",fetchingApi);
   }
+
+
+  const fetchApi = async() =>{
+    console.log("Into fetching asdf",myUrl);
+    let fetchedData = await axios.get(myUrl); 
+    let finalData = fetchedData.data
+    let apiName = finalData.name
+    let apiDes = finalData.description;
+    let apiImage = finalData.image;
+    setImage(apiImage);
+    setDescription(apiDes);
+    setName(apiName);
+
+    console.log("fetchedData",fetchedData.data);
+
+  }
+
+setInterval(()=>{
+  fetchApi();
+},10000)
+
+
+  useEffect(() => {
+
+        fetchApi();
+}, []);
+
+
 
   return (
     <div className="flex justify-center">
@@ -465,7 +510,21 @@ export default function CreateItem() {
         <button onClick={listNFTForSale} className="font-bold mt-4 bg-pink-500 text-white rounded p-4 shadow-lg">
           Create NFT
         </button>
+        <div className='mt-5'>
+          <h3 className='mt-5'>
+          {name}
+          </h3>
+          <h3 className='mt-5'>
+          {description}
+          </h3>
+          {/* <h3 className='mt-5'>
+          {image}
+          </h3> */}
+          <img className="rounded mt-4" width="350" src={image} alt=''/>
+       
       </div>
+      </div>
+    
     </div>
   )
 }
